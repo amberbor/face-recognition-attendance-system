@@ -3,14 +3,22 @@ import os
 import face_recognition
 import datetime
 from fastapi import FastAPI, Request, Form
-from fastapi.responses import HTMLResponse
+from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from connection import conn
+from fastapi.middleware.cors import CORSMiddleware
 
 app = FastAPI()
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
 templates = Jinja2Templates(directory="templates")
 
-# Load Known faces and their names from the 'faces' folder
 known_faces = []
 known_names = []
 
@@ -52,72 +60,93 @@ def mark_attendance(person):
 
 def identify_person():
     video_capture = cv2.VideoCapture(0)
-    attendance_marked = False
+    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
-    while True:
-        ret, frame = video_capture.read()
-        rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        face_locations = face_recognition.face_locations(rgb_frame)
-        face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
+    skip_frames = 2  # Skip every 2 frames
+    frame_count = 0
 
-        recognized_names = []
+    try:
+        while True:
+            ret, frame = video_capture.read()
 
-        for face_encoding in face_encodings:
-            matches = face_recognition.compare_faces(known_faces, face_encoding)
-            name = 'Unknown'
+            if frame_count % skip_frames == 0:
+                rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+                face_locations = face_recognition.face_locations(rgb_frame)
+                face_encodings = face_recognition.face_encodings(rgb_frame, face_locations)
 
-            if True in matches:
-                matched_indices = [i for i, match in enumerate(matches) if match]
-                for index in matched_indices:
-                    name = known_names[index]
-                    recognized_names.append(name)
-        if len(recognized_names) > 0:
+                for (top, right, bottom, left), face_encoding in zip(face_locations, face_encodings):
+                    matches = face_recognition.compare_faces(known_faces, face_encoding)
+                    name = 'Unknown'
 
-            for name in recognized_names:
-                mark_attendance(name)
+                    if True in matches:
+                        matched_indices = [i for i, match in enumerate(matches) if match]
+                        for index in matched_indices:
+                            name = known_names[index]
+                            mark_attendance(name)
 
-            attendance_marked = True
+                            # Draw rectangle around the face
+                            cv2.rectangle(frame, (left, top), (right, bottom), (0, 255, 0), 2)
 
-        cv2.imshow('Camera', frame)
+                            # Draw the name on the rectangle
+                            font = cv2.FONT_HERSHEY_DUPLEX
+                            cv2.putText(frame, name, (left + 6, bottom - 6), font, 0.5, (255, 255, 255), 1)
 
-        key = cv2.waitKey(1)
+                cv2.imshow('Camera', frame)
 
-        if key == ord('q') or attendance_marked:
-            video_capture.release()
-            cv2.destroyAllWindows()
-            break
+                key = cv2.waitKey(1)
 
-    video_capture.release()
-    cv2.destroyAllWindows()
+                if key == ord('q'):
+                    break
+
+            frame_count += 1
+
+    finally:
+        video_capture.release()
+        cv2.destroyAllWindows()
 
 
-@app.get("/", response_class=HTMLResponse)
+@app.get("/", response_class=JSONResponse)
 async def home(request: Request):
     conn.create(f"CREATE TABLE IF NOT EXISTS {today} (name VARCHAR(30), roll_no INT, time VARCHAR(10))")
     userDetails = extract_attendance()
     get_known_encodings()
-    return templates.TemplateResponse("home.html", {"request": request, "l": len(userDetails),
-                                                    "today": today.replace("_", "-"), "totalreg": totalreg(),
-                                                    "userDetails": userDetails})
+    response_data = {
+        "request_info": {
+            "client": str(request.client),
+            "method": request.method,
+            "url": request.url.path,
+            "query_params": dict(request.query_params),
+        },
+        "data": {
+            "l": len(userDetails),
+            "today": today.replace("_", "-"),
+            "totalreg": totalreg(),
+            "userDetails": userDetails,
+        }
+    }
+    return JSONResponse(content=response_data)
 
 
-@app.get("/video_feed")
+@app.get("/video_feed", response_class=JSONResponse)
 async def video_feed():
     identify_person()
-    userDetails = extract_attendance()
-    return templates.TemplateResponse("home.html", {"l": len(userDetails),
-                                                    "today": today.replace("_", "-"), "totalreg": totalreg(),
-                                                    "userDetails": userDetails})
+    response = RedirectResponse(url='http://localhost:3000')
+    return response
 
 
-@app.post("/add_user")
+@app.post("/add_user", response_class=JSONResponse)
 async def add_user(request: Request, newusername: str = Form(...), newrollno: int = Form(...)):
+    print(newusername)
+    print(newrollno)
     name = newusername
     roll_no = newrollno
     userimagefolder = 'static/faces'
     if not os.path.isdir(userimagefolder):
         os.makedirs(userimagefolder)
     video_capture = cv2.VideoCapture(0)
+    video_capture.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
+    video_capture.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
 
     while True:
         ret, frame = video_capture.read()
@@ -142,19 +171,17 @@ async def add_user(request: Request, newusername: str = Form(...), newrollno: in
 
         key = cv2.waitKey(1)
         if key == ord('q'):
-            img_name = name+'_'+str(roll_no)+'.jpg'
-            cv2.imwrite(userimagefolder+'/'+img_name,flipped_frame)
+            img_name = name + '_' + str(roll_no) + '.jpg'
+            cv2.imwrite(userimagefolder + '/' + img_name, flipped_frame)
             video_capture.release()
-            cv2.destroyAllWindows()  # Release the video capture and close the OpenCV window
+            cv2.destroyAllWindows()
             break
+
     video_capture.release()
     cv2.destroyAllWindows()
-
-    userDetails = extract_attendance()
     get_known_encodings()
-    return templates.TemplateResponse("home.html", {"request": request, "l": len(userDetails),
-                                                    "today": today.replace("_", "-"), "totalreg": totalreg(),
-                                                    "userDetails": userDetails})
+    response = RedirectResponse(url='http://localhost:3000')
+    return response
 
 if __name__ == '__main__':
     import uvicorn

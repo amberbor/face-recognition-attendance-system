@@ -1,3 +1,5 @@
+import random
+
 import cv2
 import os
 import face_recognition
@@ -47,15 +49,19 @@ def extract_attendance():
 
 def mark_attendance(person):
     name = person.split('_')[0]
-    roll_no = int(person.split('_')[1])
     current_time = datetime.datetime.now().strftime("%H:%M:%S")
-
-    exists = conn.read(f"SELECT * FROM {today} WHERE roll_no = {roll_no}")
-    if len(exists) == 0:
-        try:
-            conn.insert(f"INSERT INTO {today} VALUES(%s, %s, %s)", (name, roll_no, current_time))
-        except Exception as e:
-            print(e)
+    user = conn.read("SELECT id, email FROM users WHERE name = %s", (name,))
+    user_id = user[0][0]
+    print(user_id)
+    email = user[0][1]
+    print(email)
+    if user_id:
+        exists = conn.read(f"SELECT * FROM {today} WHERE user_id = {user_id}")
+        if len(exists) == 0:
+            try:
+                conn.insert(f"INSERT INTO {today} VALUES(%s, %s, %s, %s)", (name, user_id, email, current_time))
+            except Exception as e:
+                print(e)
 
 
 def identify_person():
@@ -83,6 +89,7 @@ def identify_person():
                         matched_indices = [i for i, match in enumerate(matches) if match]
                         for index in matched_indices:
                             name = known_names[index]
+                            print(name)
                             mark_attendance(name)
 
                             # Draw rectangle around the face
@@ -110,7 +117,7 @@ def identify_person():
 
 @app.get("/", response_class=JSONResponse)
 async def home(request: Request):
-    conn.create(f"CREATE TABLE IF NOT EXISTS {today} (name VARCHAR(30), roll_no INT, time VARCHAR(10))")
+    conn.create(f"CREATE TABLE IF NOT EXISTS {today} (name VARCHAR(30), user_id INT, email VARCHAR(30), time VARCHAR(10))")
     userDetails = extract_attendance()
     get_known_encodings()
     response_data = {
@@ -138,11 +145,8 @@ async def video_feed():
 
 
 @app.post("/add_user", response_class=JSONResponse)
-async def add_user(request: Request, newusername: str = Form(...), newrollno: int = Form(...)):
-    print(newusername)
-    print(newrollno)
+async def add_user(request: Request, newusername: str = Form(...), email: str = Form(...)):
     name = newusername
-    roll_no = newrollno
     userimagefolder = 'static/faces'
     if not os.path.isdir(userimagefolder):
         os.makedirs(userimagefolder)
@@ -173,8 +177,10 @@ async def add_user(request: Request, newusername: str = Form(...), newrollno: in
 
         key = cv2.waitKey(1)
         if key == ord('q'):
-            img_name = name + '_' + str(roll_no) + '.jpg'
+            img_name = name + '.jpg'
             cv2.imwrite(userimagefolder + '/' + img_name, flipped_frame)
+            image = userimagefolder + '/' + img_name
+            conn.insert(f"INSERT INTO users (name, email, image) VALUES(%s, %s, %s)", (name, email, image))
             video_capture.release()
             cv2.destroyAllWindows()
             break

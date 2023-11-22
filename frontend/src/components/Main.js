@@ -32,11 +32,11 @@ const Main = () => {
 
 const handleAddUser = async () => {
   const newUserName = document.getElementById('newusername').value;
-  const newRollNo = document.getElementById('newrollno').value;
+  const email = document.getElementById('email').value;
 
   const formData = new URLSearchParams();
   formData.append('newusername', newUserName);
-  formData.append('newrollno', newRollNo);
+  formData.append('email', email);
 
   try {
     const response = await fetch(`${URL}/add_user`, {
@@ -120,17 +120,17 @@ const handleAddUser = async () => {
           </a>
           <table style={{ backgroundColor: 'white' }}>
             <tr>
-              <td><b>S No</b></td>
+              <td><b>ID</b></td>
               <td><b>Name</b></td>
-              <td><b>Roll No</b></td>
+              <td><b>Email</b></td>
               <td><b>Time</b></td>
             </tr>
             {userDetails.map((user, index) => (
               <tr key={index}>
-                <td>{index + 1}</td>
-                <td>{user[0]}</td>
                 <td>{user[1]}</td>
+                <td>{user[0]}</td>
                 <td>{user[2]}</td>
+                <td>{user[3]}</td>
               </tr>
             ))}
           </table>
@@ -145,9 +145,9 @@ const handleAddUser = async () => {
             <br />
             <input type='text' id='newusername' name='newusername' style={{ fontSize: '20px', marginTop: '10px', marginBottom: '10px' }} required />
             <br />
-            <label style={{ fontSize: '20px' }}><b>Enter New Roll No*</b></label>
+            <label style={{ fontSize: '20px' }}><b>Enter Email*</b></label>
             <br />
-            <input type='number' id='newrollno' name='newrollno' style={{ fontSize: '20px', marginTop: '10px', marginBottom: '10px' }} required />
+            <input type='text' id='email' name='email' style={{ fontSize: '20px', marginTop: '10px', marginBottom: '10px' }} required />
             <br />
             <button style={{ width: '232px', marginTop: '20px', fontSize: '20px' }} type='submit' className='btn btn-dark' onClick={handleAddUser}>
               Add New User

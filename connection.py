@@ -15,8 +15,8 @@ class MysqlConnection:
         self.cur.execute(sql_query, values)
         self.conn.commit()
 
-    def read(self, sql_query):
-        self.cur.execute(sql_query)
+    def read(self, sql_query, params=None):
+        self.cur.execute(sql_query, params)
         rows = self.cur.fetchall()
         return rows
 

@@ -104,6 +104,8 @@ def identify_person():
     finally:
         video_capture.release()
         cv2.destroyAllWindows()
+        for i in range(5):
+            cv2.waitKey(1)
 
 
 @app.get("/", response_class=JSONResponse)
@@ -179,6 +181,8 @@ async def add_user(request: Request, newusername: str = Form(...), newrollno: in
 
     video_capture.release()
     cv2.destroyAllWindows()
+    for i in range(5):  # maybe 5 or more
+        cv2.waitKey(1)
     get_known_encodings()
     response = RedirectResponse(url='http://localhost:3000')
     return response

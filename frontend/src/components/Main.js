@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
+import backgroundImage from '../wallpaper4.jpg';
 const URL = "http://localhost:5000"
 
 
@@ -64,13 +65,13 @@ const handleAddUser = async () => {
           * {
             padding: 0;
             margin: 0;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Helvetica';
           }
 
           body {
-            background-image: url('https://cutewallpaper.org/21/1920-x-1080-gif/1920x1080-Wallpapercartoon-Wallpapers-Driverlayer-Search-.gif');
+            background-image: url('${backgroundImage}');
             background-size: cover;
-            font-family: sans-serif;
+            font-family: Helvetica;
             margin-top: 40px;
             height: 100vh;
             padding: 0;
@@ -79,7 +80,7 @@ const handleAddUser = async () => {
 
           table {
             border: 1px;
-            font-family: arial, sans-serif;
+            font-family: Helvetica;
             border-collapse: collapse;
             width: 86%;
             margin: auto;
@@ -98,7 +99,7 @@ const handleAddUser = async () => {
       </style>
       <div className='mt-3 text-center'>
         <h1 style={{ width: 'auto', margin: 'auto', color: 'white', padding: '11px', fontSize: '44px' }}>
-          Face Recognition Based Attendance System
+          Attendance System
         </h1>
       </div>
 
@@ -108,16 +109,10 @@ const handleAddUser = async () => {
 
       <div className='row text-center' style={{ padding: '20px', margin: '20px' }}>
         <div className='col' style={{ borderRadius: '20px', padding: '0px', backgroundColor: 'rgba(211,211,211,0.5)', margin: '0px 10px 10px 10px', minHeight: '400px' }}>
-          <h2 style={{ borderRadius: '20px 20px 0px 0px', backgroundColor: '#0b4c61', color: 'white', padding: '10px' }}>
-            Today's Attendance <i className='material-icons'>assignment</i>
+          <h2 style={{ borderRadius: '20px 20px 0px 0px', backgroundColor: '#424649', color: 'white', padding: '10px' }}>
+            Today's Attendance
           </h2>
-          <a style={{ textDecoration: 'none', maxWidth: '300px' }} href='/video_feed'>
-            <button
-              style={{ fontSize: '24px', fontWeight: 'bold', borderRadius: '10px', width: '490px', padding: '10px', marginTop: '30px', marginBottom: '30px' }}
-              type='submit' className='btn btn-primary' onClick={handleTakeAttendance}>
-              Take Attendance <i className='material-icons'></i>
-            </button>
-          </a>
+
           <table style={{ backgroundColor: 'white' }}>
             <tr>
               <td><b>ID</b></td>
@@ -134,11 +129,18 @@ const handleAddUser = async () => {
               </tr>
             ))}
           </table>
+          <a style={{ width: '232px' }} href='/video_feed'>
+            <button
+              style={{ fontSize: '24px', fontWeight: 'bold', borderRadius: '10px', width: '232px', padding: '10px', marginTop: '30px', marginBottom: '30px' }}
+              type='submit' className='btn btn-dark' onClick={handleTakeAttendance}>
+              Take Attendance <i className='material-icons'></i>
+            </button>
+          </a>
         </div>
 
         <div className='col' style={{ borderRadius: '20px', padding: '0px', backgroundColor: 'rgba(211,211,211,0.5)', margin: '0px 10px 10px 10px', height: '400px' }}>
           <div>
-            <h2 style={{ borderRadius: '20px 20px 0px 0px', backgroundColor: '#0b4c61', color: 'white', padding: '10px' }}>
+            <h2 style={{ borderRadius: '20px 20px 0px 0px', backgroundColor: '#424649', color: 'white', padding: '10px' }}>
               Add New User <i className='material-icons'></i>
             </h2>
             <label style={{ fontSize: '20px' }}><b>Enter New User Name*</b></label>
@@ -153,7 +155,7 @@ const handleAddUser = async () => {
               Add New User
             </button>
             <br />
-            <h5 style={{ padding: '25px' }}><i>Total Users in Database: {totalreg}</i></h5>
+            {/*<h5 style={{ padding: '25px' }}><i>Total Users in Database: {totalreg}</i></h5>*/}
           </div>
         </div>
       </div>

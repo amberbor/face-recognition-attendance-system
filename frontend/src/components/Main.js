@@ -3,9 +3,7 @@ import 'bootstrap/dist/css/bootstrap.min.css';
 import backgroundImage from '../wallpaper4.jpg';
 const URL = "http://localhost:5000"
 
-
 const Main = () => {
-
   const [today, setToday] = useState('');
   const [userDetails, setUserDetails] = useState([]);
   const [totalreg, setTotalReg] = useState(0);
@@ -31,36 +29,40 @@ const Main = () => {
     }
   };
 
-const handleAddUser = async () => {
-  const newUserName = document.getElementById('newusername').value;
-  const email = document.getElementById('email').value;
+  const handleAddUser = async () => {
+    const newUserName = document.getElementById('newusername').value;
+    const email = document.getElementById('email').value;
 
-  const formData = new URLSearchParams();
-  formData.append('newusername', newUserName);
-  formData.append('email', email);
+    const formData = new URLSearchParams();
+    formData.append('newusername', newUserName);
+    formData.append('email', email);
 
-  try {
-    const response = await fetch(`${URL}/add_user`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData,
-    });
+    try {
+      const response = await fetch(`${URL}/add_user`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: formData,
+      });
 
-    if (response.ok) {
-      fetchUserDetails(); // Refresh user details after adding a user
-    } else {
-      console.error('Failed to add a new user');
+      if (response.ok) {
+        fetchUserDetails(); // Refresh user details after adding a user
+      } else {
+        console.error('Failed to add a new user');
+      }
+    } catch (error) {
+      console.error('Error adding a new user:', error);
     }
-  } catch (error) {
-    console.error('Error adding a new user:', error);
-  }
-};
+  };
+
+  const handleDownloadCSV = () => {
+    window.location.href = `${URL}/download_attendance`;
+  };
 
   return (
     <>
-            <style>
+      <style>
         {`
           * {
             padding: 0;
@@ -136,6 +138,12 @@ const handleAddUser = async () => {
               Take Attendance <i className='material-icons'></i>
             </button>
           </a>
+
+          <button
+            style={{ fontSize: '24px', fontWeight: 'bold', borderRadius: '10px', width: '232px', padding: '10px', marginTop: '30px', marginBottom: '30px', marginLeft:'30px'}}
+            type='button' className='btn btn-dark' onClick={handleDownloadCSV}>
+            Download CSV <i className='material-icons'></i>
+          </button>
         </div>
 
         <div className='col' style={{ borderRadius: '20px', padding: '0px', backgroundColor: 'rgba(211,211,211,0.5)', margin: '0px 10px 10px 10px', height: '400px' }}>
@@ -154,8 +162,6 @@ const handleAddUser = async () => {
             <button style={{ width: '232px', marginTop: '20px', fontSize: '20px' }} type='submit' className='btn btn-dark' onClick={handleAddUser}>
               Add New User
             </button>
-            <br />
-            {/*<h5 style={{ padding: '25px' }}><i>Total Users in Database: {totalreg}</i></h5>*/}
           </div>
         </div>
       </div>

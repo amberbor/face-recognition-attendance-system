@@ -5,7 +5,7 @@ class MysqlConnection:
     def __init__(self):
         self.conn = mysql.connector.connect(
             host="localhost",
-            port=3308,
+            port=3306,
             user="root",
             database="attendance"
         )

@@ -1,3 +1,4 @@
+import csv
 import random
 
 import cv2
@@ -9,6 +10,8 @@ from fastapi.responses import JSONResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from connection import conn
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
+from io import StringIO
 
 app = FastAPI()
 app.add_middleware(
@@ -51,17 +54,38 @@ def mark_attendance(person):
     name = person.split('_')[0]
     current_time = datetime.datetime.now().strftime("%H:%M:%S")
     user = conn.read("SELECT id, email FROM users WHERE name = %s", (name,))
-    user_id = user[0][0]
-    print(user_id)
-    email = user[0][1]
-    print(email)
-    if user_id:
-        exists = conn.read(f"SELECT * FROM {today} WHERE user_id = {user_id}")
-        if len(exists) == 0:
-            try:
-                conn.insert(f"INSERT INTO {today} VALUES(%s, %s, %s, %s)", (name, user_id, email, current_time))
-            except Exception as e:
-                print(e)
+    if user:
+        user_id = user[0][0]
+        email = user[0][1]
+        print(email)
+        if user_id:
+            exists = conn.read(f"SELECT * FROM {today} WHERE user_id = {user_id}")
+            if len(exists) == 0:
+                try:
+                    conn.insert(f"INSERT INTO {today} VALUES(%s, %s, %s, %s)", (name, user_id, email, current_time))
+                except Exception as e:
+                    print(e)
+    else:
+        print(f"No user found with name {name}")
+
+
+@app.get("/download_attendance", response_class=StreamingResponse)
+async def download_attendance():
+    results = extract_attendance()
+
+    def iter_csv():
+        file = StringIO()
+        writer = csv.writer(file)
+        writer.writerow(["ID", "Name", "Email", "Time"])
+        for row in results:
+            writer.writerow(row)
+            yield file.getvalue()
+            file.seek(0)
+            file.truncate(0)
+
+    return StreamingResponse(iter_csv(), media_type="text/csv",
+                             headers={"Content-Disposition": f"attachment; filename=attendance_{today}.csv"})
+
 
 
 def identify_person():
